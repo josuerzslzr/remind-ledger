@@ -1,0 +1,56 @@
+# Generate PNG images from .puml (PlantUML) files on push and commit them back.
+# Runs only when .puml files or this workflow change. Uses Java + GraphViz (no Docker).
+
+name: PlantUML diagrams
+
+on:
+  push:
+    branches: [plantuml]
+    paths:
+      - 'docs/**/*.puml'
+      - '.github/workflows/plantuml.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install GraphViz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
+      - name: Download PlantUML
+        run: |
+          PLANTUML_VERSION=1.2026.2
+          curl -sL -o plantuml.jar "https://repo1.maven.org/maven2/net/sourceforge/plantuml/plantuml-mit/${PLANTUML_VERSION}/plantuml-mit-${PLANTUML_VERSION}.jar"
+
+      - name: Generate images from .puml files
+        run: |
+          find docs -name '*.puml' -type f | while read -r f; do
+            java -jar plantuml.jar -tpng -charset UTF-8 "$f"
+          done
+
+      - name: Commit and push generated images
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          if git diff --staged --quiet; then
+            echo "No diagram changes to commit."
+          else
+            git commit -m "chore: regenerate PlantUML images [skip ci]"
+            git push
+          fi
