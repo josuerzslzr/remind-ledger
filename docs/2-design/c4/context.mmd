@@ -1,0 +1,5 @@
+C4Context
+    title System Context - RemindLedger
+    Person(user, "End User", "Busy person managing daily reminders (e.g. meds, tasks)")
+    System(remindledger, "RemindLedger", "Reminder service: register reminders, get notified at configured time")
+    Rel(user, remindledger, "Creates reminders, receives notifications")
