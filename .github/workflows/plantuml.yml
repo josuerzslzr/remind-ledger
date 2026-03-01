@@ -51,6 +51,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No diagram changes to commit."
           else
-            git commit -m "chore: regenerate PlantUML images [skip ci]"
+            git commit -m "docs: Generate diagram images from PlantUML files"
             git push
           fi
