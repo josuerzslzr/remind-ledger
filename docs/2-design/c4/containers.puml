@@ -27,6 +27,4 @@ Rel(worker, notify, "Sends notification requests", "HTTP/API")
 Rel(notify, user, "Delivers notifications", "Email/SMS/Web Push")
 Lay_D(user, notify)
 
-
-
 @enduml
