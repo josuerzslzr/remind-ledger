@@ -1,0 +1,59 @@
+@startuml RemindLedger - Logical Data Model
+' Use same C4 theme as context/container diagrams for consistent look
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/themes/puml-theme-C4_blue.puml
+
+' Style class diagram to match C4 (component-like boxes)
+skinparam ClassBackgroundColor $COMPONENT_BG_COLOR
+skinparam ClassBorderColor DarkSlateGray
+skinparam ClassFontColor $COMPONENT_FONT_COLOR
+skinparam ClassFontStyle bold
+skinparam ArrowColor $ARROW_COLOR
+skinparam roundCorner 10
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+title Logical Data Model (conceptual)
+
+class User <<entity>> {
+  id : UUID
+  email : string
+  created_at : timestamp
+  --
+  (auth / profile TBD)
+}
+
+class Reminder <<entity>> {
+  id : UUID
+  name : string
+  recurrence : string
+  schedule : string
+  duration_type : enum
+  valid_until : date
+  user_id : UUID
+  created_at : timestamp
+  updated_at : timestamp
+  --
+  recurrence: e.g. daily, weekly, custom
+  schedule: time(s) or cron-like
+  duration_type: fixed_period | until_deleted
+  valid_until: end of validity window
+}
+
+class Notification <<entity>> {
+  id : UUID
+  reminder_id : UUID
+  due_at : timestamp
+  status : enum
+  channel : string
+  sent_at : timestamp
+  acked_at : timestamp
+  created_at : timestamp
+  --
+  status: pending | sent | failed | acked
+  channel: in_app | email | web_push | ...
+}
+
+User "1" -- "*" Reminder : has
+Reminder "1" -- "*" Notification : generates
+
+@enduml
