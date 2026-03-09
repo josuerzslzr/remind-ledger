@@ -1,30 +1,32 @@
 @startuml RemindLedger - Containers
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+#SHOW_LEGEND()
 
 title Container View - RemindLedger
 
 Person(user, "End User", "Busy person managing daily reminders (e.g. meds, tasks)")
 
-System_Boundary(remindledger, "RemindLedger") { 
-  Container(webapp, "Web App", "Web UI", "Allows the user to manage reminders via browser.")
-  Container(api, "Backend API", "Application Service", "Exposes APIs to manage reminders and orchestrate notifications.")
-  ContainerDb(db, "Database", "Data Store", "Stores reminders, user preferences, and notification state.")
-  Container(worker, "Reminder Worker", "Scheduler / Worker", "Checks for due reminders and triggers notifications.")
+System_Boundary(remindledger, "RemindLedger") {
+  Container(webapp, "Web App", "React SPA", "Allows the user to manage reminders via browser.")
+  Container(api, "Backend API", "Spring Boot", "Exposes REST APIs for reminder CRUD, manages EventBridge schedules, and processes due-reminder notifications via SQS.")
+  ContainerDb(db, "Database", "PostgreSQL (RDS)", "Stores reminders, user preferences, and notification state.")
+  ContainerQueue(sqs, "Notification Queue", "Amazon SQS", "Buffers due-reminder events for reliable processing.")
 }
 
-System_Ext(notify, "Notification Provider", "Email/SMS/Web Push service", "")
+System_Ext(scheduler, "EventBridge Scheduler", "AWS managed scheduler; fires per-reminder cron/rate schedules.")
+System_Ext(cognito, "AWS Cognito", "OAuth 2.0 / OIDC identity provider.")
+System_Ext(notify, "Notification Provider", "Email/SMS/Web Push service.")
 
-Rel(user, webapp, "Uses", "HTTPS")
-Lay_L(webapp, user)
-
+Rel_Right(user, webapp, "Uses", "HTTPS")
 Rel(webapp, api, "Calls APIs", "HTTPS")
-Rel(api, webapp, "Pushes notifications", "WebSocket")
-Rel(api, db, "Reads/writes reminders", "SQL/Query")
-Rel(api, worker, "Schedules / dispatches jobs", "Queue / events")
-Rel(worker, db, "Reads due reminders", "SQL/Query")
-Rel(worker, notify, "Sends notification requests", "HTTP/API")
+Rel_Right(webapp, cognito, "Authenticates", "OAuth 2.0")
 
-Rel(notify, user, "Delivers notifications", "Email/SMS/Web Push")
-Lay_D(user, notify)
+Rel(api, db, "Reads/writes reminders", "JDBC")
+Rel(api, scheduler, "Creates/updates/deletes schedules", "AWS SDK")
+Rel(api, sqs, "Consumes due-reminder messages", "SQS listener")
+Rel_Left(api, notify, "Sends notification requests", "HTTP/API")
+
+Rel(scheduler, sqs, "Publishes due-reminder event", "Target: SQS")
+Rel_Up(notify, user, "Delivers notifications", "Email/SMS/Web Push")
 
 @enduml
