@@ -12,45 +12,56 @@ skinparam roundCorner 10
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 
-title Logical Data Model (conceptual)
+title Logical Data Model
 
 class User <<entity>> {
-  id : UUID
-  email : string
-  created_at : timestamp
+  id          : uuid
+  cognito_sub : string
+  email       : string
+  display_name: string
+  created_at  : timestamp
+  updated_at  : timestamp
   --
-  (auth / profile TBD)
+  cognito_sub: stable Cognito user identifier (unique)
+  email: synced from Cognito JWT claims
+  display_name: optional, local display name
 }
 
 class Reminder <<entity>> {
-  id : UUID
-  name : string
-  recurrence : string
-  schedule : string
-  duration_type : enum
-  valid_until : date
-  user_id : UUID
-  created_at : timestamp
-  updated_at : timestamp
+  id            : uuid
+  user_id       : uuid
+  name          : string
+  schedule_type : enum
+  times         : time[]
+  date          : date
+  days_of_week  : enum[]
+  day_of_month  : integer
+  channels      : enum[]
+  valid_until   : date
+  created_at    : timestamp
+  updated_at    : timestamp
   --
-  recurrence: e.g. daily, weekly, custom
-  schedule: time(s) or cron-like
-  duration_type: fixed_period | until_deleted
-  valid_until: end of validity window
+  schedule_type: once | daily | weekly | monthly
+  times: time(s) of day to fire (all types)
+  date: specific date (once only)
+  days_of_week: e.g. MON, WED, FRI (weekly only)
+  day_of_month: e.g. 1, 15 (monthly only)
+  channels: web_push | in_app | email | sms (default: [web_push])
+  valid_until: null = runs until deleted
 }
 
 class Notification <<entity>> {
-  id : UUID
-  reminder_id : UUID
-  due_at : timestamp
-  status : enum
-  channel : string
-  sent_at : timestamp
-  acked_at : timestamp
-  created_at : timestamp
+  id          : uuid
+  reminder_id : uuid
+  due_at      : timestamp
+  status      : enum
+  channel     : enum
+  sent_at     : timestamp
+  acked_at    : timestamp
+  created_at  : timestamp
   --
   status: pending | sent | failed | acked
-  channel: in_app | email | web_push | ...
+  channel: web_push | in_app | email | sms
 }
 
 User "1" -- "*" Reminder : has
