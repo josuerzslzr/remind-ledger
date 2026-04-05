@@ -1,0 +1,21 @@
+spring:
+
+  docker:
+    compose:
+      file: ../docker-compose.yml
+      lifecycle-management: start-only
+
+management:
+
+  endpoints:
+    web:
+      exposure:
+        include: health, beans, env, mappings, info
+
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.remindledger: DEBUG
