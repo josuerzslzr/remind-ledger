@@ -33,6 +33,17 @@ public class DevSecurityConfig {
 
     private static final String DEV_TOKEN = "dev-token";
 
+    /**
+     * Configures HTTP security for the local development profile and builds the resulting filter chain.
+     *
+     * Disables CSRF protection, permits all requests, enables OAuth2 resource-server JWT processing,
+     * and registers a request filter that injects a development bearer token before the
+     * BearerTokenAuthenticationFilter.
+     *
+     * @param http the HttpSecurity instance to configure
+     * @return the configured SecurityFilterChain
+     * @throws Exception if the security configuration cannot be built
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -44,6 +55,13 @@ public class DevSecurityConfig {
         return http.build();
     }
 
+    /**
+     * Provides a JwtDecoder for local development that constructs a Jwt from the supplied token value.
+     *
+     * The produced Jwt contains a fixed subject and claims (email and name) and short-lived issued/expiry timestamps.
+     *
+     * @return a JwtDecoder that builds a Jwt with the provided token value and deterministic development claims and timestamps
+     */
     @Bean
     public JwtDecoder jwtDecoder() {
         return token -> Jwt.withTokenValue(token)
@@ -62,6 +80,19 @@ public class DevSecurityConfig {
      */
     private static class DevTokenInjectFilter extends OncePerRequestFilter {
 
+        /**
+         * Ensures a request has an `Authorization` header, injecting `Authorization: Bearer dev-token` when absent.
+         *
+         * If the incoming request lacks an `Authorization` header, the request is wrapped so calls to
+         * `getHeader("Authorization")` return `Bearer ` followed by `DEV_TOKEN`; otherwise the request
+         * proceeds unchanged.
+         *
+         * @param request the incoming HTTP request
+         * @param response the HTTP response
+         * @param chain the filter chain to continue processing the request
+         * @throws ServletException if an error occurs during filtering
+         * @throws IOException if an I/O error occurs during filtering
+         */
         @Override
         protected void doFilterInternal(HttpServletRequest request,
                                         HttpServletResponse response,

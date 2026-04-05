@@ -8,5 +8,11 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-    Optional<User> findByCognitoSub(String cognitoSub);
+    /**
+ * Finds a User by its Cognito `sub` identifier.
+ *
+ * @param cognitoSub the Cognito `sub` identifier associated with the user
+ * @return an Optional containing the matching User if found, or empty otherwise
+ */
+Optional<User> findByCognitoSub(String cognitoSub);
 }

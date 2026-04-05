@@ -27,11 +27,23 @@ public class ReminderService {
     private final ReminderRepository reminderRepository;
     private final UserService userService;
 
+    /**
+     * Create a ReminderService wired with the required persistence and user-resolution components.
+     *
+     * @param reminderRepository repository used to perform CRUD operations on reminders
+     * @param userService        service used to obtain or create the authenticated User from security context
+     */
     public ReminderService(ReminderRepository reminderRepository, UserService userService) {
         this.reminderRepository = reminderRepository;
         this.userService = userService;
     }
 
+    /**
+     * Lists all reminders belonging to the authenticated user represented by the given JWT token.
+     *
+     * @param auth the JWT authentication token identifying the caller
+     * @return a list of ReminderResponse objects representing the user's reminders
+     */
     @Transactional(readOnly = true)
     public List<ReminderResponse> listForUser(JwtAuthenticationToken auth) {
         User user = userService.getOrCreateUser(auth);
@@ -40,6 +52,14 @@ public class ReminderService {
                 .toList();
     }
 
+    /**
+     * Fetches a reminder by its ID for the authenticated user.
+     *
+     * @param id   the UUID of the reminder to retrieve
+     * @param auth the caller's JWT authentication token
+     * @return     the reminder converted to a {@code ReminderResponse}
+     * @throws ReminderNotFoundException if no reminder with the given id exists for the authenticated user
+     */
     @Transactional(readOnly = true)
     public ReminderResponse getById(UUID id, JwtAuthenticationToken auth) {
         User user = userService.getOrCreateUser(auth);
@@ -51,6 +71,16 @@ public class ReminderService {
                 });
     }
 
+    /**
+     * Update an existing reminder belonging to the authenticated user.
+     *
+     * @param id      the UUID of the reminder to update
+     * @param request the new reminder fields to apply
+     * @param auth    the caller's authentication token used to resolve the owning user
+     * @return        the updated reminder as a {@code ReminderResponse}
+     * @throws ReminderNotFoundException if no reminder with the given id exists for the authenticated user
+     * @throws InvalidScheduleException  if the provided schedule fields in {@code request} violate validation rules
+     */
     @Transactional
     public ReminderResponse update(UUID id, ReminderRequest request, JwtAuthenticationToken auth) {
         User user = userService.getOrCreateUser(auth);
@@ -64,6 +94,13 @@ public class ReminderService {
         return ReminderResponse.from(reminderRepository.save(reminder));
     }
 
+    /**
+     * Deletes the reminder identified by the given id belonging to the authenticated user.
+     *
+     * @param id   the UUID of the reminder to delete
+     * @param auth the authentication token used to resolve the requesting user
+     * @throws ReminderNotFoundException if no reminder with the given id exists for the authenticated user
+     */
     @Transactional
     public void delete(UUID id, JwtAuthenticationToken auth) {
         User user = userService.getOrCreateUser(auth);
@@ -75,6 +112,17 @@ public class ReminderService {
         reminderRepository.delete(reminder);
     }
 
+    /**
+     * Creates a new reminder for the authenticated user.
+     *
+     * Validates schedule-related fields from the request, associates the new reminder with
+     * the caller's user record resolved from the provided authentication token, persists it,
+     * and returns a response representation.
+     *
+     * @param request the reminder data to create
+     * @param auth    the caller's JWT authentication token used to resolve or create the User
+     * @return        a ReminderResponse representing the newly created reminder
+     */
     @Transactional
     public ReminderResponse create(ReminderRequest request, JwtAuthenticationToken auth) {
         User user = userService.getOrCreateUser(auth);
@@ -85,6 +133,17 @@ public class ReminderService {
         return ReminderResponse.from(reminder);
     }
 
+    /**
+     * Validates schedule-related fields on the given ReminderRequest according to its schedule type.
+     *
+     * For ONCE: requires `date` and exactly one entry in `times`; `daysOfWeek` and `dayOfMonth` must be null.
+     * For DAILY: `date`, `daysOfWeek`, and `dayOfMonth` must be null.
+     * For WEEKLY: `daysOfWeek` must be non-null and non-empty; `date` and `dayOfMonth` must be null.
+     * For MONTHLY: `dayOfMonth` must be non-null; `date` and `daysOfWeek` must be null.
+     *
+     * @param req the ReminderRequest whose schedule fields are to be validated
+     * @throws InvalidScheduleException if the request's fields violate the constraints for its schedule type
+     */
     private void validateScheduleFields(ReminderRequest req) {
         switch (req.scheduleType()) {
             case ONCE -> {
@@ -114,24 +173,50 @@ public class ReminderService {
         }
     }
 
+    /**
+     * Ensure the request has exactly one time entry for an ONCE schedule.
+     *
+     * @param req the reminder request whose `times()` will be validated
+     * @throws InvalidScheduleException if the request does not contain exactly one time entry
+     */
     private void requireSingleTime(ReminderRequest req) {
         if (req.times().size() != 1) {
             throw new InvalidScheduleException("ONCE schedule requires exactly one time entry");
         }
     }
 
+    /**
+     * Ensures the provided value is not null.
+     *
+     * @param value   the value to check
+     * @param message the exception message to use if the value is null
+     * @throws InvalidScheduleException if {@code value} is {@code null}
+     */
     private void requireNonNull(Object value, String message) {
         if (value == null) {
             throw new InvalidScheduleException(message);
         }
     }
 
+    /**
+     * Ensures the provided value is null and throws an {@link InvalidScheduleException} when it is not.
+     *
+     * @param value   the value that must be null
+     * @param message the exception message used when the value is not null
+     * @throws InvalidScheduleException if {@code value} is not null
+     */
     private void requireNull(Object value, String message) {
         if (value != null) {
             throw new InvalidScheduleException(message);
         }
     }
 
+    /**
+     * Logs a warning if a reminder with the given id exists, indicating the requesting user tried to access another user's reminder.
+     *
+     * @param id the UUID of the reminder that was requested
+     * @param requestingUser the user who attempted the access (used for logging)
+     */
     private void logUnauthorizedAccessIfExists(UUID id, User requestingUser) {
         if (reminderRepository.existsById(id)) {
             log.warn("User {} attempted to access reminder {} owned by another user",
@@ -139,6 +224,12 @@ public class ReminderService {
         }
     }
 
+    /**
+     * Copies mutable fields from the request into the given reminder entity.
+     *
+     * @param reminder the reminder entity to be updated
+     * @param req the request containing new field values
+     */
     private void applyUpdate(Reminder reminder, ReminderRequest req) {
         reminder.setName(req.name());
         reminder.setScheduleType(req.scheduleType());
@@ -152,6 +243,13 @@ public class ReminderService {
         reminder.setValidUntil(req.validUntil());
     }
 
+    /**
+     * Create a new Reminder entity populated from the given request and associated with the specified user.
+     *
+     * @param req  the request containing reminder data to populate the entity
+     * @param user the owning user for the new reminder
+     * @return     a new Reminder instance populated from `req` and linked to `user`
+     */
     private Reminder toEntity(ReminderRequest req, User user) {
         Reminder r = new Reminder();
         r.setUser(user);
