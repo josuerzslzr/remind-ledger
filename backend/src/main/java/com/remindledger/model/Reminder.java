@@ -73,39 +73,152 @@ public class Reminder {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public Reminder() {}
+    /**
+ * Default no-argument constructor required by JPA and frameworks that instantiate entities via reflection.
+ */
+public Reminder() {}
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    /**
+ * Gets the entity's primary key.
+ *
+ * @return the UUID primary key of this reminder
+ */
+public UUID getId() { return id; }
+    /**
+ * Set the primary key UUID for this Reminder.
+ *
+ * @param id the UUID to assign as the entity's primary key; typically assigned by the persistence provider
+ */
+public void setId(UUID id) { this.id = id; }
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    /**
+ * Gets the user who owns this reminder.
+ *
+ * @return the user that owns this reminder
+ */
+public User getUser() { return user; }
+    /**
+ * Associates this reminder with the given user.
+ *
+ * @param user the user to associate with this reminder; must not be null
+ */
+public void setUser(User user) { this.user = user; }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    /**
+ * Gets the reminder's name.
+ *
+ * @return the reminder's name
+ */
+public String getName() { return name; }
+    /**
+ * Set the reminder's name.
+ *
+ * @param name the name of the reminder; must not be null when persisting
+ */
+public void setName(String name) { this.name = name; }
 
-    public ScheduleType getScheduleType() { return scheduleType; }
-    public void setScheduleType(ScheduleType scheduleType) { this.scheduleType = scheduleType; }
+    /**
+ * The scheduling strategy used by this reminder.
+ *
+ * @return the reminder's ScheduleType
+ */
+public ScheduleType getScheduleType() { return scheduleType; }
+    /**
+ * Sets the reminder's schedule type.
+ *
+ * @param scheduleType the schedule type determining how the reminder is scheduled; must not be {@code null}
+ */
+public void setScheduleType(ScheduleType scheduleType) { this.scheduleType = scheduleType; }
 
-    public LocalTime[] getTimes() { return times; }
-    public void setTimes(LocalTime[] times) { this.times = times; }
+    /**
+ * Get the scheduled times for the reminder.
+ *
+ * @return an array of scheduled LocalTime values for this reminder; never null
+ */
+public LocalTime[] getTimes() { return times; }
+    /**
+ * Set the scheduled times for this reminder.
+ *
+ * @param times an array of LocalTime values representing the reminder times; must not be null
+ */
+public void setTimes(LocalTime[] times) { this.times = times; }
 
-    public LocalDate getDate() { return date; }
-    public void setDate(LocalDate date) { this.date = date; }
+    /**
+ * Gets the reminder's scheduled date.
+ *
+ * @return the scheduled date, or `null` if no specific date is set
+ */
+public LocalDate getDate() { return date; }
+    /**
+ * Set the specific calendar date for the reminder.
+ *
+ * @param date the date on which the reminder should occur, or {@code null} to clear it
+ */
+public void setDate(LocalDate date) { this.date = date; }
 
-    public DayOfWeek[] getDaysOfWeek() { return daysOfWeek; }
-    public void setDaysOfWeek(DayOfWeek[] daysOfWeek) { this.daysOfWeek = daysOfWeek; }
+    /**
+ * Gets the configured days of week for the reminder.
+ *
+ * @return an array of `DayOfWeek` values representing the reminder's scheduled days, or `null` if not set
+ */
+public DayOfWeek[] getDaysOfWeek() { return daysOfWeek; }
+    /**
+ * Sets the days of the week on which the reminder is active.
+ *
+ * @param daysOfWeek an array of `DayOfWeek` values specifying active weekdays, or `null` to clear the setting
+ */
+public void setDaysOfWeek(DayOfWeek[] daysOfWeek) { this.daysOfWeek = daysOfWeek; }
 
-    public Integer getDayOfMonth() { return dayOfMonth; }
-    public void setDayOfMonth(Integer dayOfMonth) { this.dayOfMonth = dayOfMonth; }
+    /**
+ * Gets the day-of-month for the reminder.
+ *
+ * @return the day of month (1–31) or {@code null} if not set
+ */
+public Integer getDayOfMonth() { return dayOfMonth; }
+    /**
+ * Set the day of the month for this reminder.
+ *
+ * @param dayOfMonth the day of the month (1–31), or {@code null} to unset
+ */
+public void setDayOfMonth(Integer dayOfMonth) { this.dayOfMonth = dayOfMonth; }
 
-    public Channel[] getChannels() { return channels; }
-    public void setChannels(Channel[] channels) { this.channels = channels; }
+    /**
+ * Gets the channels through which the reminder will be delivered.
+ *
+ * @return an array of `Channel` values representing the delivery channels for this reminder
+ */
+public Channel[] getChannels() { return channels; }
+    /**
+ * Set the delivery channels for this reminder.
+ *
+ * @param channels an array of Channel values indicating where notifications should be sent; must not be null
+ */
+public void setChannels(Channel[] channels) { this.channels = channels; }
 
-    public LocalDate getValidUntil() { return validUntil; }
-    public void setValidUntil(LocalDate validUntil) { this.validUntil = validUntil; }
+    /**
+ * The date after which the reminder is no longer active.
+ *
+ * @return the final date the reminder is valid (inclusive), or {@code null} if the reminder does not expire
+ */
+public LocalDate getValidUntil() { return validUntil; }
+    /**
+ * Sets the date after which the reminder is no longer valid.
+ *
+ * @param validUntil the inclusive last valid date for the reminder, or {@code null} if the reminder should not expire
+ */
+public void setValidUntil(LocalDate validUntil) { this.validUntil = validUntil; }
 
-    public Instant getCreatedAt() { return createdAt; }
+    /**
+ * Timestamp when the reminder was created.
+ *
+ * @return the creation timestamp, populated by JPA auditing (may be null before the entity is persisted)
+ */
+public Instant getCreatedAt() { return createdAt; }
 
-    public Instant getUpdatedAt() { return updatedAt; }
+    /**
+ * Gets the timestamp when this entity was last modified.
+ *
+ * @return the last modification timestamp
+ */
+public Instant getUpdatedAt() { return updatedAt; }
 }

@@ -20,6 +20,16 @@ import org.springframework.security.web.SecurityFilterChain;
 @Profile("!local")
 public class SecurityConfig {
 
+    /**
+     * Configures the application's HTTP security and returns the built SecurityFilterChain.
+     *
+     * Configures CSRF as disabled, session management as stateless, permits unauthenticated access to
+     * /actuator/** and OpenAPI/Swagger endpoints, requires authentication for all other requests,
+     * enables JWT-based OAuth2 resource server support, and uses the provided AuthenticationEntryPoint
+     * for authentication failures.
+     *
+     * @return the configured SecurityFilterChain
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationEntryPoint authEntryPoint) throws Exception {
         http
@@ -37,6 +47,16 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Creates an AuthenticationEntryPoint that writes a JSON ProblemDetail and sets HTTP status 401 when authentication fails.
+     *
+     * <p>The response detail message is derived from the authentication exception:
+     * "invalid_token" -> "Token is invalid or expired",
+     * "insufficient_scope" -> "Token has insufficient scope",
+     * otherwise the provider description is used if present, falling back to "Authentication required".</p>
+     *
+     * @return an AuthenticationEntryPoint that writes a 401 JSON ProblemDetail with a context-specific detail message
+     */
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint(ObjectMapper objectMapper) {
         return (request, response, ex) -> {
