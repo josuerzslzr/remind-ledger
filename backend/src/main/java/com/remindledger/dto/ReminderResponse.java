@@ -25,6 +25,12 @@ public record ReminderResponse(
         Instant createdAt,
         Instant updatedAt
 ) {
+    /**
+     * Create a ReminderResponse DTO from a Reminder entity.
+     *
+     * @param entity the source Reminder; array fields (times, channels) are converted to lists and a null `daysOfWeek` on the source is preserved as `null` in the result
+     * @return a ReminderResponse populated with values copied from the given entity
+     */
     public static ReminderResponse from(Reminder entity) {
         return new ReminderResponse(
                 entity.getId(),

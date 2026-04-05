@@ -10,7 +10,20 @@ import java.util.UUID;
 
 public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
 
-    List<Reminder> findAllByUser(User user);
+    /**
+ * Finds all reminders belonging to the specified user.
+ *
+ * @param user the owner whose reminders should be retrieved
+ * @return a list of Reminder entities associated with the given user; an empty list if none are found
+ */
+List<Reminder> findAllByUser(User user);
 
-    Optional<Reminder> findByIdAndUser(UUID id, User user);
+    /**
+ * Find a reminder by its UUID that belongs to the specified user.
+ *
+ * @param id   the UUID of the reminder to find
+ * @param user the owner of the reminder
+ * @return an Optional containing the matching Reminder, or empty if no match is found
+ */
+Optional<Reminder> findByIdAndUser(UUID id, User user);
 }
