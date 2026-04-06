@@ -2,7 +2,6 @@ package com.remindledger.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.remindledger.config.SecurityConfig;
-import com.remindledger.config.UserProvisioningFilter;
 import com.remindledger.dto.ReminderRequest;
 import com.remindledger.dto.ReminderResponse;
 import com.remindledger.exception.GlobalExceptionHandler;
