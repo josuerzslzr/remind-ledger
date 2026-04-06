@@ -113,18 +113,20 @@ class ReminderRepositoryTest {
     @Nested
     class ArrayColumns {
 
-        @Test
+        `@Test`
         void times_persistsAndLoadsCorrectly() {
             Reminder saved = reminderRepository.save(buildReminder("Test", userA,
                     new LocalTime[]{LocalTime.of(8, 0), LocalTime.of(20, 0)},
                     new Channel[]{Channel.IN_APP, Channel.EMAIL}));
+            entityManager.flush();
+            entityManager.clear();
 
             Reminder loaded = reminderRepository.findById(saved.getId()).orElseThrow();
 
             assertThat(loaded.getTimes()).containsExactly(LocalTime.of(8, 0), LocalTime.of(20, 0));
         }
 
-        @Test
+        `@Test`
         void daysOfWeek_persistsAndLoadsCorrectly() {
             Reminder r = new Reminder();
             r.setUser(userA);
@@ -134,6 +136,8 @@ class ReminderRepositoryTest {
             r.setChannels(new Channel[]{Channel.WEB_PUSH});
             r.setDaysOfWeek(new DayOfWeek[]{DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY});
             Reminder saved = reminderRepository.save(r);
+            entityManager.flush();
+            entityManager.clear();
 
             Reminder loaded = reminderRepository.findById(saved.getId()).orElseThrow();
 
@@ -141,15 +145,18 @@ class ReminderRepositoryTest {
                     DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY);
         }
 
-        @Test
+        `@Test`
         void channels_persistsAndLoadsCorrectly() {
             Reminder saved = reminderRepository.save(buildReminder("Test", userA,
                     new LocalTime[]{LocalTime.of(9, 0)},
                     new Channel[]{Channel.IN_APP, Channel.EMAIL, Channel.WEB_PUSH}));
+            entityManager.flush();
+            entityManager.clear();
 
             Reminder loaded = reminderRepository.findById(saved.getId()).orElseThrow();
 
             assertThat(loaded.getChannels()).containsExactly(Channel.IN_APP, Channel.EMAIL, Channel.WEB_PUSH);
+        }
         }
     }
 
