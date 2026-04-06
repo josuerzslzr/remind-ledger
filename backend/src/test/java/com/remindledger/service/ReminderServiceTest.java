@@ -16,11 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.time.DayOfWeek;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -40,28 +37,14 @@ class ReminderServiceTest {
     @Mock
     private ReminderRepository reminderRepository;
 
-    @Mock
-    private UserService userService;
-
     @InjectMocks
     private ReminderService reminderService;
 
-    private JwtAuthenticationToken mockAuth;
     private User testUser;
 
     @BeforeEach
     void setUp() {
-        Jwt jwt = Jwt.withTokenValue("test-token")
-                .header("alg", "RS256")
-                .subject("test-sub")
-                .claim("email", "test@example.com")
-                .claim("name", "Test User")
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plusSeconds(3600))
-                .build();
-        mockAuth = new JwtAuthenticationToken(jwt);
         testUser = new User("test-sub", "test@example.com", "Test User");
-        when(userService.getOrCreateUser(any())).thenReturn(testUser);
     }
 
     @Nested
@@ -78,7 +61,7 @@ class ReminderServiceTest {
                     null, null,
                     List.of(Channel.WEB_PUSH), null);
 
-            ReminderResponse response = reminderService.create(request, mockAuth);
+            ReminderResponse response = reminderService.create(request, testUser);
 
             assertThat(response.name()).isEqualTo("Call dentist");
             assertThat(response.scheduleType()).isEqualTo(ScheduleType.ONCE);
@@ -94,7 +77,7 @@ class ReminderServiceTest {
                     null, null, null,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class)
                     .hasMessageContaining("date is required");
             verify(reminderRepository, never()).save(any());
@@ -109,7 +92,7 @@ class ReminderServiceTest {
                     null, null,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class)
                     .hasMessageContaining("exactly one time");
             verify(reminderRepository, never()).save(any());
@@ -124,7 +107,7 @@ class ReminderServiceTest {
                     List.of(DayOfWeek.MONDAY), null,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class)
                     .hasMessageContaining("daysOfWeek must be null");
             verify(reminderRepository, never()).save(any());
@@ -139,7 +122,7 @@ class ReminderServiceTest {
                     null, 15,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class);
             verify(reminderRepository, never()).save(any());
         }
@@ -158,7 +141,7 @@ class ReminderServiceTest {
                     null, null, null,
                     List.of(Channel.WEB_PUSH, Channel.EMAIL), null);
 
-            ReminderResponse response = reminderService.create(request, mockAuth);
+            ReminderResponse response = reminderService.create(request, testUser);
 
             assertThat(response.name()).isEqualTo("Take vitamins");
             assertThat(response.times()).hasSize(2);
@@ -174,7 +157,7 @@ class ReminderServiceTest {
                     null, null,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class)
                     .hasMessageContaining("date must be null");
         }
@@ -187,7 +170,7 @@ class ReminderServiceTest {
                     null, List.of(DayOfWeek.MONDAY), null,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class);
             verify(reminderRepository, never()).save(any());
         }
@@ -200,7 +183,7 @@ class ReminderServiceTest {
                     null, null, 15,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class);
             verify(reminderRepository, never()).save(any());
         }
@@ -221,7 +204,7 @@ class ReminderServiceTest {
                     null,
                     List.of(Channel.WEB_PUSH), null);
 
-            ReminderResponse response = reminderService.create(request, mockAuth);
+            ReminderResponse response = reminderService.create(request, testUser);
 
             assertThat(response.name()).isEqualTo("Team standup");
             assertThat(response.daysOfWeek()).hasSize(3);
@@ -236,7 +219,7 @@ class ReminderServiceTest {
                     null, null, null,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class)
                     .hasMessageContaining("daysOfWeek is required");
         }
@@ -249,7 +232,7 @@ class ReminderServiceTest {
                     null, List.of(), null,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class)
                     .hasMessageContaining("must not be empty");
         }
@@ -263,7 +246,7 @@ class ReminderServiceTest {
                     List.of(DayOfWeek.MONDAY), null,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class);
             verify(reminderRepository, never()).save(any());
         }
@@ -276,7 +259,7 @@ class ReminderServiceTest {
                     null, List.of(DayOfWeek.MONDAY), 15,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class);
             verify(reminderRepository, never()).save(any());
         }
@@ -295,7 +278,7 @@ class ReminderServiceTest {
                     null, null, 1,
                     List.of(Channel.WEB_PUSH, Channel.EMAIL), null);
 
-            ReminderResponse response = reminderService.create(request, mockAuth);
+            ReminderResponse response = reminderService.create(request, testUser);
 
             assertThat(response.name()).isEqualTo("Pay rent");
             assertThat(response.dayOfMonth()).isEqualTo(1);
@@ -310,7 +293,7 @@ class ReminderServiceTest {
                     null, null, null,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class)
                     .hasMessageContaining("dayOfMonth is required");
         }
@@ -323,7 +306,7 @@ class ReminderServiceTest {
                     LocalDate.of(2026, 4, 15), null, 1,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class);
             verify(reminderRepository, never()).save(any());
         }
@@ -336,7 +319,7 @@ class ReminderServiceTest {
                     null, List.of(DayOfWeek.MONDAY), 1,
                     List.of(Channel.WEB_PUSH), null);
 
-            assertThatThrownBy(() -> reminderService.create(request, mockAuth))
+            assertThatThrownBy(() -> reminderService.create(request, testUser))
                     .isInstanceOf(InvalidScheduleException.class);
             verify(reminderRepository, never()).save(any());
         }
@@ -351,7 +334,7 @@ class ReminderServiceTest {
             Reminder r2 = buildReminder(UUID.randomUUID(), "Pay rent", testUser);
             when(reminderRepository.findAllByUser(testUser)).thenReturn(List.of(r1, r2));
 
-            List<ReminderResponse> result = reminderService.listForUser(mockAuth);
+            List<ReminderResponse> result = reminderService.listForUser(testUser);
 
             assertThat(result).hasSize(2);
             assertThat(result).extracting(ReminderResponse::name)
@@ -362,7 +345,7 @@ class ReminderServiceTest {
         void noReminders_returnsEmpty() {
             when(reminderRepository.findAllByUser(testUser)).thenReturn(List.of());
 
-            assertThat(reminderService.listForUser(mockAuth)).isEmpty();
+            assertThat(reminderService.listForUser(testUser)).isEmpty();
         }
     }
 
@@ -376,7 +359,7 @@ class ReminderServiceTest {
             when(reminderRepository.findByIdAndUser(id, testUser))
                     .thenReturn(Optional.of(buildReminder(id, "Dentist", testUser)));
 
-            ReminderResponse result = reminderService.getById(id, mockAuth);
+            ReminderResponse result = reminderService.getById(id, testUser);
 
             assertThat(result.id()).isEqualTo(id);
             assertThat(result.name()).isEqualTo("Dentist");
@@ -389,7 +372,7 @@ class ReminderServiceTest {
             when(reminderRepository.findByIdAndUser(id, testUser)).thenReturn(Optional.empty());
             when(reminderRepository.existsById(id)).thenReturn(false);
 
-            assertThatThrownBy(() -> reminderService.getById(id, mockAuth))
+            assertThatThrownBy(() -> reminderService.getById(id, testUser))
                     .isInstanceOf(ReminderNotFoundException.class);
         }
 
@@ -400,7 +383,7 @@ class ReminderServiceTest {
             when(reminderRepository.findByIdAndUser(id, testUser)).thenReturn(Optional.empty());
             when(reminderRepository.existsById(id)).thenReturn(true);
 
-            assertThatThrownBy(() -> reminderService.getById(id, mockAuth))
+            assertThatThrownBy(() -> reminderService.getById(id, testUser))
                     .isInstanceOf(ReminderNotFoundException.class);
             verify(reminderRepository).existsById(id);
         }
@@ -423,7 +406,7 @@ class ReminderServiceTest {
                     null, null, null,
                     List.of(Channel.IN_APP), null);
 
-            ReminderResponse result = reminderService.update(id, request, mockAuth);
+            ReminderResponse result = reminderService.update(id, request, testUser);
 
             assertThat(result.name()).isEqualTo("New name");
             assertThat(result.scheduleType()).isEqualTo(ScheduleType.DAILY);
@@ -443,7 +426,7 @@ class ReminderServiceTest {
                     null, null, null,
                     List.of(Channel.IN_APP), null);
 
-            assertThatThrownBy(() -> reminderService.update(id, request, mockAuth))
+            assertThatThrownBy(() -> reminderService.update(id, request, testUser))
                     .isInstanceOf(ReminderNotFoundException.class);
             verify(reminderRepository, never()).save(any());
         }
@@ -461,7 +444,7 @@ class ReminderServiceTest {
                     null, null, null,
                     List.of(Channel.IN_APP), null);
 
-            assertThatThrownBy(() -> reminderService.update(id, request, mockAuth))
+            assertThatThrownBy(() -> reminderService.update(id, request, testUser))
                     .isInstanceOf(InvalidScheduleException.class)
                     .hasMessageContaining("date is required");
             verify(reminderRepository, never()).save(any());
@@ -478,7 +461,7 @@ class ReminderServiceTest {
 
             when(reminderRepository.findByIdAndUser(id, testUser)).thenReturn(Optional.of(reminder));
 
-            reminderService.delete(id, mockAuth);
+            reminderService.delete(id, testUser);
 
             verify(reminderRepository).delete(reminder);
         }
@@ -490,7 +473,7 @@ class ReminderServiceTest {
             when(reminderRepository.findByIdAndUser(id, testUser)).thenReturn(Optional.empty());
             when(reminderRepository.existsById(id)).thenReturn(false);
 
-            assertThatThrownBy(() -> reminderService.delete(id, mockAuth))
+            assertThatThrownBy(() -> reminderService.delete(id, testUser))
                     .isInstanceOf(ReminderNotFoundException.class);
             verify(reminderRepository, never()).delete(any());
         }
@@ -502,7 +485,7 @@ class ReminderServiceTest {
             when(reminderRepository.findByIdAndUser(id, testUser)).thenReturn(Optional.empty());
             when(reminderRepository.existsById(id)).thenReturn(true);
 
-            assertThatThrownBy(() -> reminderService.delete(id, mockAuth))
+            assertThatThrownBy(() -> reminderService.delete(id, testUser))
                     .isInstanceOf(ReminderNotFoundException.class);
             verify(reminderRepository, never()).delete(any());
             verify(reminderRepository).existsById(id);

@@ -26,7 +26,7 @@ public class User {
     @Column(name = "cognito_sub", nullable = false, unique = true)
     private String cognitoSub;
 
-    @Column(nullable = false)
+    @Column
     private String email;
 
     @Column(name = "display_name")
@@ -48,6 +48,15 @@ public class User {
 public User() {}
 
     /**
+     * Creates a new User with the specified Cognito subject
+     *
+     * @param cognitoSub the Cognito subject (unique identifier) for the user
+     */
+    public User(String cognitoSub) {
+        this.cognitoSub = cognitoSub;
+    }
+
+    /**
      * Creates a new User with the specified Cognito subject, email, and display name.
      *
      * @param cognitoSub the Cognito subject (unique identifier) for the user
@@ -61,58 +70,58 @@ public User() {}
     }
 
     /**
- * Get the entity's primary key.
- *
- * @return the user's primary key UUID
- */
-public UUID getId() { return id; }
+     * Get the entity's primary key.
+     *
+     * @return the user's primary key UUID
+     */
+    public UUID getId() { return id; }
 
     /**
- * Retrieves the Cognito subject identifier for the user.
- *
- * @return the Cognito `sub` value that uniquely identifies the user
- */
-public String getCognitoSub() { return cognitoSub; }
+     * Retrieves the Cognito subject identifier for the user.
+     *
+     * @return the Cognito `sub` value that uniquely identifies the user
+     */
+    public String getCognitoSub() { return cognitoSub; }
 
     /**
- * Gets the user's email address.
- *
- * @return the user's email address
- */
-public String getEmail() { return email; }
+     * Gets the user's email address.
+     *
+     * @return the user's email address
+     */
+    public String getEmail() { return email; }
     /**
- * Set the user's email address.
- *
- * @param email the new email address
- */
-public void setEmail(String email) { this.email = email; }
+     * Set the user's email address.
+     *
+     * @param email the new email address
+     */
+    public void setEmail(String email) { this.email = email; }
 
     /**
- * Gets the user's display name.
- *
- * @return the display name, or `null` if not set
- */
-public String getDisplayName() { return displayName; }
+     * Gets the user's display name.
+     *
+     * @return the display name, or `null` if not set
+     */
+    public String getDisplayName() { return displayName; }
     /**
- * Sets the user's display name.
- *
- * @param displayName the display name to assign to the user
- */
-public void setDisplayName(String displayName) { this.displayName = displayName; }
+     * Sets the user's display name.
+     *
+     * @param displayName the display name to assign to the user
+     */
+    public void setDisplayName(String displayName) { this.displayName = displayName; }
 
     /**
- * The creation timestamp for this user, set by JPA auditing.
- *
- * @return the creation timestamp, or `null` if it has not been set (e.g., before persistence)
- */
-public Instant getCreatedAt() { return createdAt; }
+     * The creation timestamp for this user, set by JPA auditing.
+     *
+     * @return the creation timestamp, or `null` if it has not been set (e.g., before persistence)
+     */
+    public Instant getCreatedAt() { return createdAt; }
 
     /**
- * Timestamp when the user was last modified.
- *
- * Populated by JPA auditing; may be null before the entity is persisted.
- *
- * @return the last modification timestamp, or `null` if not set
- */
-public Instant getUpdatedAt() { return updatedAt; }
+     * Timestamp when the user was last modified.
+     *
+     * Populated by JPA auditing; may be null before the entity is persisted.
+     *
+     * @return the last modification timestamp, or `null` if not set
+     */
+    public Instant getUpdatedAt() { return updatedAt; }
 }

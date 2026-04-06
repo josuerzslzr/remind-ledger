@@ -1,6 +1,8 @@
 package com.remindledger.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.remindledger.config.SecurityConfig;
+import com.remindledger.config.UserProvisioningFilter;
 import com.remindledger.dto.ReminderRequest;
 import com.remindledger.dto.ReminderResponse;
 import com.remindledger.exception.GlobalExceptionHandler;
@@ -8,7 +10,9 @@ import com.remindledger.exception.InvalidScheduleException;
 import com.remindledger.exception.ReminderNotFoundException;
 import com.remindledger.model.Channel;
 import com.remindledger.model.ScheduleType;
+import com.remindledger.model.User;
 import com.remindledger.service.ReminderService;
+import com.remindledger.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ReminderController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
 @TestPropertySource(properties = {
         "spring.security.oauth2.resourceserver.jwt.issuer-uri=https://test.example.com"
 })
@@ -58,14 +62,21 @@ class ReminderControllerTest {
     private ReminderService reminderService;
 
     @MockitoBean
+    private UserService userService;
+
+    @MockitoBean
     @SuppressWarnings("unused")
     private JwtDecoder jwtDecoder;
 
     private RequestPostProcessor testJwt;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
         testJwt = jwt().jwt(j -> j.subject("test-sub").claim("email", "test@example.com"));
+        testUser = new User("test-sub", "test@example.com", "Test User");
+        when(userService.provisionUser("test-sub", "test@example.com", null))
+                .thenReturn(testUser);
     }
 
     @Test
@@ -167,7 +178,7 @@ class ReminderControllerTest {
         mockMvc.perform(post("/api/reminders")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -267,7 +278,7 @@ class ReminderControllerTest {
     @Test
     void deleteReminder_noAuth_rejectsRequest() throws Exception {
         mockMvc.perform(delete("/api/reminders/{id}", UUID.randomUUID()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(reminderService, never()).delete(any(), any());
     }
@@ -286,7 +297,7 @@ class ReminderControllerTest {
         mockMvc.perform(put("/api/reminders/{id}", UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(reminderService, never()).update(any(), any(), any());
     }

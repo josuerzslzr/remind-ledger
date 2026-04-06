@@ -50,6 +50,7 @@ public class Reminder {
 
     private LocalDate date;
 
+    @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "days_of_week", columnDefinition = "text[]")
     private DayOfWeek[] daysOfWeek;

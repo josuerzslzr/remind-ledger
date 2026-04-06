@@ -1,13 +1,15 @@
 package com.remindledger.controller;
 
+import com.remindledger.config.UserProvisioningFilter;
 import com.remindledger.dto.ReminderRequest;
 import com.remindledger.dto.ReminderResponse;
+import com.remindledger.model.User;
 import com.remindledger.service.ReminderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,8 +47,8 @@ public class ReminderController {
      */
     @GetMapping
     @Operation(summary = "List all reminders for the authenticated user")
-    public List<ReminderResponse> list(JwtAuthenticationToken auth) {
-        return reminderService.listForUser(auth);
+    public List<ReminderResponse> list(HttpServletRequest request) {
+        return reminderService.listForUser(currentUser(request));
     }
 
     /**
@@ -58,8 +60,8 @@ public class ReminderController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "Get a reminder by ID")
-    public ReminderResponse get(@PathVariable UUID id, JwtAuthenticationToken auth) {
-        return reminderService.getById(id, auth);
+    public ReminderResponse get(@PathVariable UUID id, HttpServletRequest request) {
+        return reminderService.getById(id, currentUser(request));
     }
 
     /**
@@ -73,9 +75,9 @@ public class ReminderController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new reminder")
     public ReminderResponse create(
-            @Valid @RequestBody ReminderRequest request,
-            JwtAuthenticationToken auth) {
-        return reminderService.create(request, auth);
+            @Valid @RequestBody ReminderRequest body,
+            HttpServletRequest request) {
+        return reminderService.create(body, currentUser(request));
     }
 
     /**
@@ -90,9 +92,9 @@ public class ReminderController {
     @Operation(summary = "Replace a reminder")
     public ReminderResponse update(
             @PathVariable UUID id,
-            @Valid @RequestBody ReminderRequest request,
-            JwtAuthenticationToken auth) {
-        return reminderService.update(id, request, auth);
+            @Valid @RequestBody ReminderRequest body,
+            HttpServletRequest request) {
+        return reminderService.update(id, body, currentUser(request));
     }
 
     /**
@@ -103,7 +105,11 @@ public class ReminderController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a reminder")
-    public void delete(@PathVariable UUID id, JwtAuthenticationToken auth) {
-        reminderService.delete(id, auth);
+    public void delete(@PathVariable UUID id, HttpServletRequest request) {
+        reminderService.delete(id, currentUser(request));
+    }
+
+    private User currentUser(HttpServletRequest request) {
+        return (User) request.getAttribute(UserProvisioningFilter.USER_ATTRIBUTE);
     }
 }

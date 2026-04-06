@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import com.remindledger.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -33,6 +34,12 @@ public class DevSecurityConfig {
 
     private static final String DEV_TOKEN = "dev-token";
 
+    private final UserService userService;
+
+    public DevSecurityConfig(UserService userService) {
+        this.userService = userService;
+    }
+
     /**
      * Configures HTTP security for the local development profile and builds the resulting filter chain.
      *
@@ -51,6 +58,8 @@ public class DevSecurityConfig {
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
             .addFilterBefore(new DevTokenInjectFilter(),
+                    BearerTokenAuthenticationFilter.class)
+            .addFilterAfter(new UserProvisioningFilter(userService),
                     BearerTokenAuthenticationFilter.class);
         return http.build();
     }
