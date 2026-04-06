@@ -29,14 +29,16 @@ public class SecurityConfig {
     }
 
     /**
-     * Configures the application's HTTP security and returns the built SecurityFilterChain.
+     * Configures the security filter chain for non-local profiles.
      *
-     * Configures CSRF as disabled, session management as stateless, permits unauthenticated access to
-     * /actuator/** and OpenAPI/Swagger endpoints, requires authentication for all other requests,
-     * enables JWT-based OAuth2 resource server support, and uses the provided AuthenticationEntryPoint
-     * for authentication failures.
-     *
-     * @return the configured SecurityFilterChain
+     * <ul>
+     *   <li>CSRF disabled (stateless JWT API).</li>
+     *   <li>Stateless session management.</li>
+     *   <li>Health, info, and OpenAPI endpoints are public; all others require authentication.</li>
+     *   <li>JWT-based OAuth2 resource server with {@link BearerTokenAuthenticationEntryPoint} (401 + WWW-Authenticate)
+     *       and a custom {@link AccessDeniedHandler} for 403 responses.</li>
+     *   <li>{@link UserProvisioningFilter} runs after JWT validation to ensure a User row exists.</li>
+     * </ul>
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,14 +61,8 @@ public class SecurityConfig {
     }
 
     /**
-     * Creates an AuthenticationEntryPoint that writes a JSON ProblemDetail and sets HTTP status 401 when authentication fails.
-     *
-     * <p>The response detail message is derived from the authentication exception:
-     * "invalid_token" -> "Token is invalid or expired",
-     * "insufficient_scope" -> "Token has insufficient scope",
-     * otherwise the provider description is used if present, falling back to "Authentication required".</p>
-     *
-     * @return an AuthenticationEntryPoint that writes a 401 JSON ProblemDetail with a context-specific detail message
+     * Returns an {@link AccessDeniedHandler} that writes a 403 JSON {@link ProblemDetail}
+     * when an authenticated user lacks the required scope or permissions (RFC 6750).
      */
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
