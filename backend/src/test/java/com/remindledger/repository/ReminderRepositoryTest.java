@@ -17,6 +17,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import jakarta.persistence.EntityManager;
+
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
@@ -40,6 +42,9 @@ class ReminderRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private User userA;
     private User userB;
@@ -113,7 +118,7 @@ class ReminderRepositoryTest {
     @Nested
     class ArrayColumns {
 
-        `@Test`
+        @Test
         void times_persistsAndLoadsCorrectly() {
             Reminder saved = reminderRepository.save(buildReminder("Test", userA,
                     new LocalTime[]{LocalTime.of(8, 0), LocalTime.of(20, 0)},
@@ -126,7 +131,7 @@ class ReminderRepositoryTest {
             assertThat(loaded.getTimes()).containsExactly(LocalTime.of(8, 0), LocalTime.of(20, 0));
         }
 
-        `@Test`
+        @Test
         void daysOfWeek_persistsAndLoadsCorrectly() {
             Reminder r = new Reminder();
             r.setUser(userA);
@@ -145,7 +150,7 @@ class ReminderRepositoryTest {
                     DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY);
         }
 
-        `@Test`
+        @Test
         void channels_persistsAndLoadsCorrectly() {
             Reminder saved = reminderRepository.save(buildReminder("Test", userA,
                     new LocalTime[]{LocalTime.of(9, 0)},
@@ -156,7 +161,6 @@ class ReminderRepositoryTest {
             Reminder loaded = reminderRepository.findById(saved.getId()).orElseThrow();
 
             assertThat(loaded.getChannels()).containsExactly(Channel.IN_APP, Channel.EMAIL, Channel.WEB_PUSH);
-        }
         }
     }
 
