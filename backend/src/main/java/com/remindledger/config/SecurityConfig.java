@@ -1,6 +1,7 @@
 package com.remindledger.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.remindledger.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -11,14 +12,21 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 
 @Configuration
 @EnableWebSecurity
 @Profile("!local")
 public class SecurityConfig {
+
+    private final UserService userService;
+
+    public SecurityConfig(UserService userService) {
+        this.userService = userService;
+    }
 
     /**
      * Configures the application's HTTP security and returns the built SecurityFilterChain.
@@ -31,18 +39,21 @@ public class SecurityConfig {
      * @return the configured SecurityFilterChain
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationEntryPoint authEntryPoint) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(Customizer.withDefaults())
-                .authenticationEntryPoint(authEntryPoint));
+                .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
+                .accessDeniedHandler(accessDeniedHandler()))
+            .addFilterAfter(new UserProvisioningFilter(userService),
+                    BearerTokenAuthenticationFilter.class);
 
         return http.build();
     }
@@ -58,20 +69,12 @@ public class SecurityConfig {
      * @return an AuthenticationEntryPoint that writes a 401 JSON ProblemDetail with a context-specific detail message
      */
     @Bean
-    public AuthenticationEntryPoint authenticationEntryPoint(ObjectMapper objectMapper) {
+    public AccessDeniedHandler accessDeniedHandler() {
+        ObjectMapper objectMapper = new ObjectMapper();
         return (request, response, ex) -> {
-            String detail = "Authentication required";
-            if (ex instanceof OAuth2AuthenticationException oauthEx) {
-                detail = switch (oauthEx.getError().getErrorCode()) {
-                    case "invalid_token" -> "Token is invalid or expired";
-                    case "insufficient_scope" -> "Token has insufficient scope";
-                    default -> oauthEx.getError().getDescription() != null
-                            ? oauthEx.getError().getDescription()
-                            : detail;
-                };
-            }
-            ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, detail);
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                    HttpStatus.FORBIDDEN, "Insufficient scope or permissions");
+            response.setStatus(HttpStatus.FORBIDDEN.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             objectMapper.writeValue(response.getWriter(), pd);
         };

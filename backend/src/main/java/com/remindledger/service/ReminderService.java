@@ -10,7 +10,6 @@ import com.remindledger.model.User;
 import com.remindledger.repository.ReminderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,28 +24,24 @@ public class ReminderService {
     private static final Logger log = LoggerFactory.getLogger(ReminderService.class);
 
     private final ReminderRepository reminderRepository;
-    private final UserService userService;
 
     /**
      * Create a ReminderService wired with the required persistence and user-resolution components.
      *
      * @param reminderRepository repository used to perform CRUD operations on reminders
-     * @param userService        service used to obtain or create the authenticated User from security context
      */
-    public ReminderService(ReminderRepository reminderRepository, UserService userService) {
+    public ReminderService(ReminderRepository reminderRepository) {
         this.reminderRepository = reminderRepository;
-        this.userService = userService;
     }
 
     /**
      * Lists all reminders belonging to the authenticated user represented by the given JWT token.
      *
-     * @param auth the JWT authentication token identifying the caller
+     * @param user the user entity already extracted 
      * @return a list of ReminderResponse objects representing the user's reminders
      */
     @Transactional(readOnly = true)
-    public List<ReminderResponse> listForUser(JwtAuthenticationToken auth) {
-        User user = userService.getOrCreateUser(auth);
+    public List<ReminderResponse> listForUser(User user) {
         return reminderRepository.findAllByUser(user).stream()
                 .map(ReminderResponse::from)
                 .toList();
@@ -56,13 +51,12 @@ public class ReminderService {
      * Fetches a reminder by its ID for the authenticated user.
      *
      * @param id   the UUID of the reminder to retrieve
-     * @param auth the caller's JWT authentication token
+     * @param user the user entity already extracted 
      * @return     the reminder converted to a {@code ReminderResponse}
      * @throws ReminderNotFoundException if no reminder with the given id exists for the authenticated user
      */
     @Transactional(readOnly = true)
-    public ReminderResponse getById(UUID id, JwtAuthenticationToken auth) {
-        User user = userService.getOrCreateUser(auth);
+    public ReminderResponse getById(UUID id, User user) {
         return reminderRepository.findByIdAndUser(id, user)
                 .map(ReminderResponse::from)
                 .orElseGet(() -> {
@@ -82,8 +76,7 @@ public class ReminderService {
      * @throws InvalidScheduleException  if the provided schedule fields in {@code request} violate validation rules
      */
     @Transactional
-    public ReminderResponse update(UUID id, ReminderRequest request, JwtAuthenticationToken auth) {
-        User user = userService.getOrCreateUser(auth);
+    public ReminderResponse update(UUID id, ReminderRequest request, User user) {
         Reminder reminder = reminderRepository.findByIdAndUser(id, user)
                 .orElseGet(() -> {
                     logUnauthorizedAccessIfExists(id, user);
@@ -102,8 +95,7 @@ public class ReminderService {
      * @throws ReminderNotFoundException if no reminder with the given id exists for the authenticated user
      */
     @Transactional
-    public void delete(UUID id, JwtAuthenticationToken auth) {
-        User user = userService.getOrCreateUser(auth);
+    public void delete(UUID id, User user) {
         Reminder reminder = reminderRepository.findByIdAndUser(id, user)
                 .orElseGet(() -> {
                     logUnauthorizedAccessIfExists(id, user);
@@ -124,10 +116,8 @@ public class ReminderService {
      * @return        a ReminderResponse representing the newly created reminder
      */
     @Transactional
-    public ReminderResponse create(ReminderRequest request, JwtAuthenticationToken auth) {
-        User user = userService.getOrCreateUser(auth);
+    public ReminderResponse create(ReminderRequest request, User user) {
         validateScheduleFields(request);
-
         Reminder reminder = toEntity(request, user);
         reminder = reminderRepository.save(reminder);
         return ReminderResponse.from(reminder);

@@ -2,7 +2,6 @@ package com.remindledger.service;
 
 import com.remindledger.model.User;
 import com.remindledger.repository.UserRepository;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,19 +20,35 @@ public class UserService {
     }
 
     /**
-     * Locate a User by the Cognito subject (`sub`) from the provided JWT or create and persist a new User using claims from that JWT when none exists.
-     *
-     * @param auth the JwtAuthenticationToken containing the Cognito JWT; the method reads the token subject as the Cognito `sub` and the `email` and `name` claims for provisioning
-     * @return the existing User if one was found for the Cognito `sub`, otherwise a newly created and saved User built from the token's `sub`, `email`, and `name` claims
+     * Ensures a user row exists for the given Cognito {@code sub}.
+     * Creates one if missing; updates email/name if provided and changed.
+     * Called by {@link com.remindledger.config.UserProvisioningFilter}.
      */
     @Transactional
-    public User getOrCreateUser(JwtAuthenticationToken auth) {
-        String sub = auth.getToken().getSubject();
+    public User provisionUser(String sub, String email, String name) {
         return userRepository.findByCognitoSub(sub)
-                .orElseGet(() -> {
-                    String email = auth.getToken().getClaimAsString("email");
-                    String name = auth.getToken().getClaimAsString("name");
-                    return userRepository.save(new User(sub, email, name));
-                });
+                .map(existing -> {
+                    boolean updated = false;
+                    if (email != null && !email.equals(existing.getEmail())) {
+                        existing.setEmail(email);
+                        updated = true;
+                    }
+                    if (name != null && !name.equals(existing.getDisplayName())) {
+                        existing.setDisplayName(name);
+                        updated = true;
+                    }
+                    return updated ? userRepository.save(existing) : existing;
+                })
+                .orElseGet(() -> userRepository.save(new User(sub, email, name)));
+    }
+
+    /**
+     * Finds the user by Cognito {@code sub}.
+     * Assumes the user has already been provisioned by the filter.
+     */
+    public User getBySub(String sub) {
+        return userRepository.findByCognitoSub(sub)
+                .orElseThrow(() -> new IllegalStateException(
+                        "User not found for sub: " + sub + ". UserProvisioningFilter should have created it."));
     }
 }
