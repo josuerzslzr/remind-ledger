@@ -36,46 +36,35 @@ resource "aws_lb_target_group" "app" {
   }
 }
 
-resource "aws_lb_listener" "http_forward" {
-  count = var.alb_certificate_arn == "" ? 1 : 0
-
+# Single HTTP listener — only reachable from CloudFront (SG enforced).
+# Default action rejects; forward rule requires the shared secret header.
+resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app.arn
-  }
-}
-
-resource "aws_lb_listener" "http_redirect" {
-  count = var.alb_certificate_arn != "" ? 1 : 0
-
-  load_balancer_arn = aws_lb.main.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type = "redirect"
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Forbidden"
+      status_code  = "403"
     }
   }
 }
 
-resource "aws_lb_listener" "https" {
-  count = var.alb_certificate_arn != "" ? 1 : 0
+resource "aws_lb_listener_rule" "verified_origin" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 1
 
-  load_balancer_arn = aws_lb.main.arn
-  port              = 443
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = var.alb_certificate_arn
+  condition {
+    http_header {
+      http_header_name = "X-Origin-Verify"
+      values           = [random_uuid.origin_verify.result]
+    }
+  }
 
-  default_action {
+  action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.app.arn
   }

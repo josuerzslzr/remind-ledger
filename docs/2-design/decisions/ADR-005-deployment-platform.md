@@ -18,9 +18,21 @@ purpose-built for time-based event delivery.
 
 ## Decision
 
-### Backend API — Amazon ECS Fargate + Application Load Balancer (ALB)
+### Backend API — Amazon ECS Fargate + ALB behind CloudFront
 
-- ALB provides HTTPS termination; TLS certificate provisioned via AWS ACM (free).
+- A CloudFront distribution sits in front of the ALB and provides trusted HTTPS
+  to clients via its default `*.cloudfront.net` certificate ($0, no custom domain
+  required).
+- CloudFront connects to the ALB origin over HTTP. The ALB is **not** directly
+  accessible from the internet:
+  - The ALB security group restricts ingress to the AWS-managed CloudFront
+    origin-facing prefix list (`com.amazonaws.global.cloudfront.origin-facing`).
+  - The ALB listener default action returns 403. A listener rule forwards
+    traffic only when the request carries a secret `X-Origin-Verify` header
+    injected by CloudFront, ensuring that only this project's distribution can
+    reach the backend.
+- Caching is disabled on the distribution (managed policy `CachingDisabled`);
+  all requests are forwarded to the ALB as-is.
 - Spring Boot API: one ECS service, `desired_count = 1` in Phase 1.
 - Container images stored in Amazon ECR.
 
@@ -52,6 +64,7 @@ purpose-built for time-based event delivery.
 | AWS App Runner | Simpler than ECS but less control; more expensive per vCPU-hour when active; smaller ecosystem and community vs ECS. |
 | Kubernetes (EKS) | Significant operational complexity; overkill for this scale. |
 | AWS Lambda (API) | JVM cold start (~3–8s) is prohibitive for a user-facing REST API without GraalVM native compilation. |
+| ALB-terminated HTTPS (ACM certificate) | Requires a registered domain for ACM DNS validation; adds ~$12–20/year in domain costs. Not justified for a personal project without a custom domain. |
 | API Gateway + Lambda | Same cold start issue; API Gateway unnecessary when ALB handles routing and HTTPS termination for ECS. |
 
 ### Reminder scheduling
@@ -73,6 +86,9 @@ purpose-built for time-based event delivery.
 
 ## Consequences
 
+- CloudFront (API distribution) is within the free tier at this scale (1 TB/month transfer, 10M HTTPS requests/month). No additional cost over the frontend distribution.
+- No custom domain or ACM certificate is required. HTTPS is provided by the default `*.cloudfront.net` certificate at $0.
+- If a custom domain is acquired later, it can be added as a CloudFront alternate domain name with an ACM certificate — no architectural change required.
 - ALB has no free tier; costs ~$16–18/month when running. At ~3h/day active usage, cost is ~$2/month. Covered by AWS free credits.
 - ECS Fargate has no free tier; costs ~$9/month per task at 24/7. At ~3h/day, ~$1/month per task.
 - EventBridge Scheduler is free for the first 14 million invocations/month; no cost impact at this scale.
