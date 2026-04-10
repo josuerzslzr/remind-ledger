@@ -37,12 +37,6 @@ variable "container_image_tag" {
   default     = "latest"
 }
 
-variable "alb_certificate_arn" {
-  type        = string
-  description = "Optional ACM certificate ARN for HTTPS (same region as ALB). Leave empty for HTTP-only on port 80."
-  default     = ""
-}
-
 variable "skip_final_snapshot" {
   type        = bool
   description = "Set false for production-style RDS teardown protection."

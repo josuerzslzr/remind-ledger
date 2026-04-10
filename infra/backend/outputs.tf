@@ -1,5 +1,10 @@
+output "cloudfront_domain_name" {
+  description = "CloudFront HTTPS URL for the API (default *.cloudfront.net domain)."
+  value       = aws_cloudfront_distribution.api.domain_name
+}
+
 output "alb_dns_name" {
-  description = "Public ALB DNS name (HTTP on 80, or HTTPS on 443 when certificate is set)."
+  description = "ALB DNS name (HTTP only, restricted to CloudFront via SG + origin header)."
   value       = aws_lb.main.dns_name
 }
 
