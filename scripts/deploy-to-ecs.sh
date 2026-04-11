@@ -28,20 +28,32 @@ IMAGE_TAG="${1:-$(git -C "$REPO_ROOT" rev-parse --short HEAD)}"
 # Resolve infrastructure coordinates.
 # In CI these come from env vars; locally they're read from Terraform outputs.
 # ---------------------------------------------------------------------------
-if [[ -z "${ECS_CLUSTER:-}" ]]; then
+if [[ -z "${ECR_REPO_URL:-}" ]]; then
+  echo "==> Reading ECR_REPO_URL from infra/foundation Terraform state"
+  ECR_REPO_URL=$(terraform -chdir="$REPO_ROOT/infra/foundation" output -raw ecr_repository_url)
+fi
+
+if [[ -z "${ECS_CLUSTER:-}" || -z "${ECS_SERVICE:-}" ]]; then
   TF_DIR="$REPO_ROOT/infra/backend"
-  echo "==> Reading Terraform outputs from $TF_DIR"
-  ECR_REPO_URL=$(terraform -chdir="$REPO_ROOT/infra/foundation" output -raw ecr_repository_url 2>/dev/null || echo "${ECR_REPO_URL:-}")
-  ECS_CLUSTER=$(terraform -chdir="$TF_DIR" output -raw ecs_cluster_name)
-  ECS_SERVICE=$(terraform -chdir="$TF_DIR" output -raw ecs_service_name)
+  echo "==> Reading ECS coordinates from $TF_DIR"
+  ECS_CLUSTER="${ECS_CLUSTER:-$(terraform -chdir="$TF_DIR" output -raw ecs_cluster_name)}"
+  ECS_SERVICE="${ECS_SERVICE:-$(terraform -chdir="$TF_DIR" output -raw ecs_service_name)}"
 fi
 
 AWS_REGION="${AWS_REGION:-$(aws configure get region 2>/dev/null)}"
-if [[ -z "$AWS_REGION" ]]; then
-  echo "ERROR: AWS_REGION is not set and no default region found in AWS CLI config." >&2
-  echo "       Set AWS_REGION or run: aws configure set region <region>" >&2
+
+# Fail fast if any required variable is missing.
+MISSING=()
+[[ -z "${ECR_REPO_URL:-}" ]] && MISSING+=("ECR_REPO_URL")
+[[ -z "${ECS_CLUSTER:-}" ]] && MISSING+=("ECS_CLUSTER")
+[[ -z "${ECS_SERVICE:-}" ]] && MISSING+=("ECS_SERVICE")
+[[ -z "${AWS_REGION:-}" ]]  && MISSING+=("AWS_REGION")
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  echo "ERROR: Missing required variables: ${MISSING[*]}" >&2
+  echo "       Set them as env vars or ensure Terraform state is available." >&2
   exit 1
 fi
+
 ECS_TASK_FAMILY="${ECS_CLUSTER}"
 IMAGE_URI="$ECR_REPO_URL:$IMAGE_TAG"
 
