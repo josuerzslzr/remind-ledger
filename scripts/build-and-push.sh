@@ -34,7 +34,12 @@ if [[ -z "${ECR_REPO_URL:-}" ]]; then
   ECR_REPO_URL=$(terraform -chdir="$TF_DIR" output -raw ecr_repository_url)
 fi
 
-AWS_REGION="${AWS_REGION:-$(aws configure get region || echo "us-east-1")}"
+AWS_REGION="${AWS_REGION:-$(aws configure get region 2>/dev/null)}"
+if [[ -z "$AWS_REGION" ]]; then
+  echo "ERROR: AWS_REGION is not set and no default region found in AWS CLI config." >&2
+  echo "       Set AWS_REGION or run: aws configure set region <region>" >&2
+  exit 1
+fi
 ECR_REGISTRY="${ECR_REPO_URL%%/*}"
 
 echo "==> Config"
