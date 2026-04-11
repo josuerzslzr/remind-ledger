@@ -31,12 +31,17 @@ IMAGE_TAG="${1:-$(git -C "$REPO_ROOT" rev-parse --short HEAD)}"
 if [[ -z "${ECS_CLUSTER:-}" ]]; then
   TF_DIR="$REPO_ROOT/infra/backend"
   echo "==> Reading Terraform outputs from $TF_DIR"
-  ECR_REPO_URL=$(terraform -chdir="$TF_DIR" output -raw ecr_repository_url 2>/dev/null || echo "${ECR_REPO_URL:-}")
+  ECR_REPO_URL=$(terraform -chdir="$REPO_ROOT/infra/foundation" output -raw ecr_repository_url 2>/dev/null || echo "${ECR_REPO_URL:-}")
   ECS_CLUSTER=$(terraform -chdir="$TF_DIR" output -raw ecs_cluster_name)
   ECS_SERVICE=$(terraform -chdir="$TF_DIR" output -raw ecs_service_name)
 fi
 
-AWS_REGION="${AWS_REGION:-$(aws configure get region || echo "us-east-1")}"
+AWS_REGION="${AWS_REGION:-$(aws configure get region 2>/dev/null)}"
+if [[ -z "$AWS_REGION" ]]; then
+  echo "ERROR: AWS_REGION is not set and no default region found in AWS CLI config." >&2
+  echo "       Set AWS_REGION or run: aws configure set region <region>" >&2
+  exit 1
+fi
 ECS_TASK_FAMILY="${ECS_CLUSTER}"
 IMAGE_URI="$ECR_REPO_URL:$IMAGE_TAG"
 

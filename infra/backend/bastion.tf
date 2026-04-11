@@ -1,7 +1,8 @@
 # ── SSM bastion for RDS port-forwarding (dev/debug) ─────────────
 
 data "aws_ssm_parameter" "al2023_ami" {
-  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+  count = var.enable_bastion ? 1 : 0
+  name  = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 }
 
 # ── Security group ──────────────────────────────────────────────
@@ -71,7 +72,7 @@ resource "aws_iam_instance_profile" "bastion" {
 
 resource "aws_instance" "bastion" {
   count                  = var.enable_bastion ? 1 : 0
-  ami                    = data.aws_ssm_parameter.al2023_ami.value
+  ami                    = data.aws_ssm_parameter.al2023_ami[0].value
   instance_type          = "t3.nano"
   subnet_id              = aws_subnet.public[0].id
   iam_instance_profile   = aws_iam_instance_profile.bastion[0].name
@@ -111,9 +112,10 @@ resource "aws_iam_policy" "bastion_developer_access" {
         Effect = "Allow"
         Action = [
           "ssm:TerminateSession",
-          "ssm:ResumeSession"
+          "ssm:ResumeSession",
+          "ssmmessages:OpenDataChannel"
         ]
-        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:session/$${aws:username}-*"
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:session/$${aws:userid}-*"
       }
     ]
   })
