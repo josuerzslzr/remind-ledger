@@ -7,7 +7,7 @@ RUN ./mvnw -B -q dependency:go-offline
 COPY src ./src
 RUN ./mvnw -B -q package -DskipTests
 
-# Runtime: JDK 21 + curl for ECS/Compose health checks
+# Runtime: JDK 21 + curl for container health checks
 FROM amazoncorretto:21-alpine
 RUN apk add --no-cache curl \
   && addgroup -g 65532 -S app \

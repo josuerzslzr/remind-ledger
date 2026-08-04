@@ -8,12 +8,41 @@ output "alb_dns_name" {
   value       = aws_lb.main.dns_name
 }
 
+output "vpc_id" {
+  description = "VPC used by the selected application runtime."
+  value       = aws_vpc.main.id
+}
+
+output "deployment_target" {
+  description = "Application runtime selected for this backend stack."
+  value       = var.deployment_target
+}
+
+output "target_group_arn" {
+  description = "Target group owned by the selected runtime."
+  value = var.deployment_target == "ecs" ? (
+    module.ecs[0].target_group_arn
+  ) : module.eks[0].target_group_arn
+}
+
 output "ecs_cluster_name" {
-  value = aws_ecs_cluster.main.name
+  description = "ECS cluster name when deployment_target is ecs."
+  value       = var.deployment_target == "ecs" ? module.ecs[0].cluster_name : null
 }
 
 output "ecs_service_name" {
-  value = aws_ecs_service.app.name
+  description = "ECS service name when deployment_target is ecs."
+  value       = var.deployment_target == "ecs" ? module.ecs[0].service_name : null
+}
+
+output "eks_cluster_name" {
+  description = "EKS cluster name when deployment_target is eks."
+  value       = var.deployment_target == "eks" ? module.eks[0].cluster_name : null
+}
+
+output "eks_app_log_group_name" {
+  description = "CloudWatch application log group when deployment_target is eks."
+  value       = var.deployment_target == "eks" ? module.eks[0].app_log_group_name : null
 }
 
 output "rds_endpoint" {
@@ -26,6 +55,32 @@ output "db_secret_arn" {
   description = "Secrets Manager ARN holding DB username/password (JSON keys: username, password)."
   value       = aws_secretsmanager_secret.db.arn
   sensitive   = true
+}
+
+output "db_name" {
+  description = "Database name passed to the application."
+  value       = aws_db_instance.main.db_name
+}
+
+output "db_port" {
+  description = "Database port passed to the application."
+  value       = aws_db_instance.main.port
+}
+
+output "aws_region" {
+  value = var.aws_region
+}
+
+output "ecr_repository_url" {
+  value = var.ecr_repository_url
+}
+
+output "cognito_issuer_uri" {
+  value = var.cognito_issuer_uri
+}
+
+output "spring_profile" {
+  value = var.spring_profile
 }
 
 output "bastion_instance_id" {

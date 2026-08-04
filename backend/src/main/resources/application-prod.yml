@@ -1,4 +1,4 @@
-# Activated when SPRING_PROFILES_ACTIVE=prod (e.g. ECS task definition).
+# Activated when SPRING_PROFILES_ACTIVE=prod in the selected container runtime.
 # Base application.yml still applies: Flyway runs on startup, OAuth2 resource server, ddl-auto validate.
 
 spring:

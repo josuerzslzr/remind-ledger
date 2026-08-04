@@ -1,0 +1,26 @@
+namespace: remind-ledger
+replicaCount: 1
+
+image:
+  repository: ""
+  tag: latest
+  pullPolicy: Always
+
+awsRegion: us-east-1
+springProfile: prod
+cognitoIssuerUri: ""
+targetGroupArn: ""
+
+database:
+  host: ""
+  port: 5432
+  name: remindledger
+  secretArn: ""
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 500m
+    memory: 1Gi
