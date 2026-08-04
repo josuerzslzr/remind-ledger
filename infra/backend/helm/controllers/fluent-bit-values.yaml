@@ -1,0 +1,13 @@
+serviceAccount:
+  create: true
+  name: fluent-bit
+
+config:
+  outputs: |
+    [OUTPUT]
+        Name cloudwatch_logs
+        Match kube.*
+        region ${AWS_REGION}
+        log_group_name ${CLOUDWATCH_LOG_GROUP}
+        log_stream_prefix fluent-bit-
+        auto_create_group false

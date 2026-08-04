@@ -1,0 +1,13 @@
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: {{ include "remind-ledger.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "remind-ledger.labels" . | nindent 4 }}
+spec:
+  serviceRef:
+    name: {{ include "remind-ledger.fullname" . }}
+    port: 8080
+  targetGroupARN: {{ .Values.targetGroupArn | quote }}
+  targetType: ip
