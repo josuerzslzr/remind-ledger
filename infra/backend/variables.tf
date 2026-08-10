@@ -114,22 +114,22 @@ variable "eks_node_max_size" {
     condition     = var.eks_node_max_size >= 1
     error_message = "eks_node_max_size must be at least one."
   }
+
+  validation {
+    condition = (
+      var.eks_node_min_size <= var.eks_node_desired_size &&
+      var.eks_node_desired_size <= var.eks_node_max_size
+    )
+    error_message = "EKS node sizes must satisfy eks_node_min_size <= eks_node_desired_size <= eks_node_max_size."
+  }
 }
 
 variable "eks_public_access_cidrs" {
   type        = list(string)
   description = "CIDR blocks allowed to reach the public EKS API endpoint. Restrict this to trusted administrator networks."
-  default     = ["0.0.0.0/0"]
 
   validation {
-    condition     = length(var.eks_public_access_cidrs) > 0 && alltrue([for cidr in var.eks_public_access_cidrs : can(cidrnetmask(cidr))])
+    condition     = length(var.eks_public_access_cidrs) > 0 && alltrue([for cidr in var.eks_public_access_cidrs : can(cidrhost(cidr, 0))])
     error_message = "eks_public_access_cidrs must contain valid IPv4 or IPv6 CIDR blocks."
   }
-}
-
-variable "eks_admin_principal_arn" {
-  type        = string
-  description = "IAM principal granted cluster-admin access. Defaults to the principal running Terraform."
-  default     = null
-  nullable    = true
 }

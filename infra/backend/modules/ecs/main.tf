@@ -47,49 +47,6 @@ resource "aws_cloudwatch_log_group" "app" {
   retention_in_days = 14
 }
 
-resource "aws_lb_target_group" "app" {
-  name        = "${var.project}-ecs"
-  port        = 8080
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    interval            = 30
-    matcher             = "200"
-    path                = "/actuator/health"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 3
-  }
-
-  deregistration_delay = 30
-
-  tags = {
-    Name = "${var.project}-ecs"
-  }
-}
-
-resource "aws_lb_listener_rule" "verified_origin" {
-  listener_arn = var.alb_listener_arn
-  priority     = 1
-
-  condition {
-    http_header {
-      http_header_name = "X-Origin-Verify"
-      values           = [var.origin_verify_value]
-    }
-  }
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app.arn
-  }
-}
-
 resource "aws_ecs_task_definition" "app" {
   family                   = var.project
   network_mode             = "awsvpc"
@@ -164,10 +121,8 @@ resource "aws_ecs_service" "app" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.app.arn
+    target_group_arn = var.target_group_arn
     container_name   = "app"
     container_port   = 8080
   }
-
-  depends_on = [aws_lb_listener_rule.verified_origin]
 }

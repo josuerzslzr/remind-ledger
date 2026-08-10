@@ -30,7 +30,7 @@ mutually exclusive rather than parallel environments.
 
 Runtime-specific resources are isolated in local Terraform modules under
 `infra/backend/modules/ecs` and `infra/backend/modules/eks`. Both modules use
-the same backend state and expose a common `target_group_arn` interface to the
+the same backend state and integrate with the shared target group owned by the
 root module. They do not define independent Terraform backends.
 
 The deployment targets provide complementary benefits:
@@ -41,13 +41,13 @@ The deployment targets provide complementary benefits:
 | EKS | Uses standard Kubernetes APIs and tooling; supports Helm and the Kubernetes ecosystem; keeps workload definitions portable at the orchestration layer. |
 
 The ECS target consists of a Fargate cluster, task definition, service, IAM
-roles, security rules, logging, and an IP target group. ECS registers its tasks
-directly with the target group.
+roles, security rules, and logging. ECS registers its tasks directly with the
+shared target group.
 
 The EKS target consists of an EKS cluster with a managed EC2 node group,
 managed Kubernetes add-ons, Pod Identity roles, private node networking,
-logging, security rules, and an IP target group. The application is packaged as
-a Helm chart. Kubernetes controllers integrate the workload with AWS:
+logging, and security rules. The application is packaged as a Helm chart.
+Kubernetes controllers integrate the workload with AWS:
 
 - AWS Load Balancer Controller registers pod IPs in the existing target group
   through `TargetGroupBinding`; it does not create another load balancer.
@@ -69,14 +69,16 @@ script.
 
 The following resources remain independent of the runtime selection:
 
-- The VPC, RDS database, Secrets Manager secret, ALB, and CloudFront
-  distribution are managed by the `infra/backend` root module.
+- The VPC, RDS database, Secrets Manager secret, ALB, application target group,
+  listener rule, and CloudFront distribution are managed by the `infra/backend`
+  root module.
 - A shared ECR repository stores the same application image for either target.
 - CloudFront provides HTTPS and connects to the Terraform-managed ALB.
 - The ALB security group accepts traffic only from the AWS-managed CloudFront
   origin-facing prefix list.
-- The ALB default action returns 403. A forwarding rule for the selected target
-  requires the secret `X-Origin-Verify` header injected by CloudFront.
+- The ALB default action returns 403. One priority-1 forwarding rule requires
+  the secret `X-Origin-Verify` header injected by CloudFront and routes to the
+  shared target group.
 
 This boundary allows either runtime to host the same stateless application
 without duplicating the database, public entry point, container image, or

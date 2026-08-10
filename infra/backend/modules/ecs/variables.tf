@@ -4,11 +4,7 @@ variable "vpc_id" { type = string }
 variable "public_subnet_ids" { type = list(string) }
 variable "alb_security_group_id" { type = string }
 variable "rds_security_group_id" { type = string }
-variable "alb_listener_arn" { type = string }
-variable "origin_verify_value" {
-  type      = string
-  sensitive = true
-}
+variable "target_group_arn" { type = string }
 variable "ecr_repository_url" { type = string }
 variable "container_image_tag" { type = string }
 variable "cognito_issuer_uri" { type = string }

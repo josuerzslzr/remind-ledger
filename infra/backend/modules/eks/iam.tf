@@ -19,6 +19,41 @@ resource "aws_iam_role_policy_attachment" "cluster" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
+data "aws_iam_policy_document" "eks_admin_assume" {
+  statement {
+    sid     = "AllowTerraformPrincipal"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "AWS"
+      identifiers = [var.admin_trusted_principal_arn]
+    }
+  }
+}
+
+resource "aws_iam_role" "eks_admin" {
+  name               = "${var.project}-eks-admin"
+  assume_role_policy = data.aws_iam_policy_document.eks_admin_assume.json
+
+  tags = {
+    Name = "${var.project}-eks-admin"
+  }
+}
+
+data "aws_iam_policy_document" "eks_admin_permissions" {
+  statement {
+    sid       = "DescribeCluster"
+    actions   = ["eks:DescribeCluster"]
+    resources = [aws_eks_cluster.main.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "eks_admin" {
+  name   = "describe-cluster"
+  role   = aws_iam_role.eks_admin.id
+  policy = data.aws_iam_policy_document.eks_admin_permissions.json
+}
+
 data "aws_iam_policy_document" "node_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -76,14 +111,21 @@ data "aws_iam_policy_document" "load_balancer_controller" {
       "ec2:DescribeInstances",
       "ec2:DescribeSecurityGroups",
       "ec2:DescribeVpcs",
-      "elasticloadbalancing:DeregisterTargets",
       "elasticloadbalancing:DescribeTargetGroups",
       "elasticloadbalancing:DescribeTargetHealth",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "MutateApplicationTargetGroup"
+    actions = [
+      "elasticloadbalancing:DeregisterTargets",
       "elasticloadbalancing:ModifyTargetGroup",
       "elasticloadbalancing:ModifyTargetGroupAttributes",
       "elasticloadbalancing:RegisterTargets",
     ]
-    resources = ["*"]
+    resources = [var.target_group_arn]
   }
 }
 

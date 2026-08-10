@@ -77,7 +77,7 @@ resource "aws_eks_cluster" "main" {
 
 resource "aws_eks_access_entry" "admin" {
   cluster_name  = aws_eks_cluster.main.name
-  principal_arn = var.cluster_admin_principal
+  principal_arn = aws_iam_role.eks_admin.arn
   type          = "STANDARD"
 }
 
@@ -169,49 +169,6 @@ resource "aws_vpc_security_group_ingress_rule" "rds_from_cluster" {
   from_port                    = 5432
   to_port                      = 5432
   ip_protocol                  = "tcp"
-}
-
-resource "aws_lb_target_group" "app" {
-  name        = "${var.project}-eks"
-  port        = 8080
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    interval            = 30
-    matcher             = "200"
-    path                = "/actuator/health"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 3
-  }
-
-  deregistration_delay = 30
-
-  tags = {
-    Name = "${var.project}-eks"
-  }
-}
-
-resource "aws_lb_listener_rule" "verified_origin" {
-  listener_arn = var.alb_listener_arn
-  priority     = 1
-
-  condition {
-    http_header {
-      http_header_name = "X-Origin-Verify"
-      values           = [var.origin_verify_value]
-    }
-  }
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app.arn
-  }
 }
 
 resource "aws_cloudwatch_log_group" "app" {

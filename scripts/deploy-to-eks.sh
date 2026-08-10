@@ -15,7 +15,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TF_DIR="$REPO_ROOT/infra/backend"
 APP_CHART="$TF_DIR/helm/remind-ledger"
 FLUENT_BIT_VALUES="$TF_DIR/helm/controllers/fluent-bit-values.yaml"
-IMAGE_TAG="${1:-$(git -C "$REPO_ROOT" rev-parse --short HEAD)}"
+#IMAGE_TAG="${1:-$(git -C "$REPO_ROOT" rev-parse --short HEAD)}"
+IMAGE_TAG="latest"
 
 for command in aws terraform kubectl helm; do
   if ! command -v "$command" >/dev/null 2>&1; then
@@ -37,6 +38,7 @@ fi
 AWS_REGION="${AWS_REGION:-$(tf_output aws_region)}"
 ECR_REPO_URL="${ECR_REPO_URL:-$(tf_output ecr_repository_url)}"
 EKS_CLUSTER="${EKS_CLUSTER:-$(tf_output eks_cluster_name)}"
+EKS_ADMIN_ROLE_ARN="${EKS_ADMIN_ROLE_ARN:-$(tf_output eks_admin_role_arn)}"
 VPC_ID="${VPC_ID:-$(tf_output vpc_id)}"
 TARGET_GROUP_ARN="${TARGET_GROUP_ARN:-$(tf_output target_group_arn)}"
 DB_HOST="${DB_HOST:-$(tf_output rds_endpoint)}"
@@ -50,7 +52,9 @@ CLOUDWATCH_LOG_GROUP="${CLOUDWATCH_LOG_GROUP:-$(tf_output eks_app_log_group_name
 echo "==> Configuring kubectl for EKS cluster $EKS_CLUSTER"
 aws eks update-kubeconfig \
   --name "$EKS_CLUSTER" \
-  --region "$AWS_REGION"
+  --region "$AWS_REGION" \
+  --assume-role-arn "$EKS_ADMIN_ROLE_ARN" \
+  --role-arn "$EKS_ADMIN_ROLE_ARN"
 
 echo "==> Waiting for the managed node group"
 kubectl wait --for=condition=Ready nodes --all --timeout=10m
