@@ -19,10 +19,8 @@ output "deployment_target" {
 }
 
 output "target_group_arn" {
-  description = "Target group owned by the selected runtime."
-  value = var.deployment_target == "ecs" ? (
-    module.ecs[0].target_group_arn
-  ) : module.eks[0].target_group_arn
+  description = "Shared target group used by the selected runtime."
+  value       = aws_lb_target_group.app.arn
 }
 
 output "ecs_cluster_name" {
@@ -38,6 +36,11 @@ output "ecs_service_name" {
 output "eks_cluster_name" {
   description = "EKS cluster name when deployment_target is eks."
   value       = var.deployment_target == "eks" ? module.eks[0].cluster_name : null
+}
+
+output "eks_admin_role_arn" {
+  description = "Generated Kubernetes administrator role ARN when deployment_target is eks."
+  value       = var.deployment_target == "eks" ? module.eks[0].admin_role_arn : null
 }
 
 output "eks_app_log_group_name" {
