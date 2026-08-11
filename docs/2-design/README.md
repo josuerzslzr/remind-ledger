@@ -1,23 +1,21 @@
-# 2. Design
+# Design
 
-Architecture and behavior diagrams for RemindLedger. All diagrams are in **PlantUML** (`.puml`).
+Target architecture and data models for RemindLedger. These documents describe the intended system; consult the root [current status](../../README.md#current-status) to distinguish implemented and planned components.
 
-## Layout
+## Contents
 
-| Folder | Content |
-|--------|--------|
-| [c4/](c4/) | C4 model: system context, containers, components (use [C4-PlantUML](https://github.com/plantuml-stdlib/C4-PlantUML)). |
-| [data/](data/) | Logical and physical data model (entities, relationships, schema). |
-| [sequence/](sequence/) | Sequence diagrams for key flows (e.g. create reminder, notify user). |
+| Area | Content |
+|------|---------|
+| [C4 model](c4/) | System context and container views, with PlantUML sources and rendered PNGs. |
+| [Data design](data/README.md) | Logical entities, relationships, and schedule representations. |
+| [Architectural decisions](decisions/README.md) | Technology and architecture choices, alternatives, and consequences. |
 
-One `.puml` file per diagram. Add `img/` subfolders and export PNG/SVG here if you want rendered images in the repo.
+Design is driven by the [user stories](../1-requirements/user-stories.md). An accepted architectural decision records an agreed direction; it does not by itself mean that the decision has been implemented.
 
-## How to generate
+## Working with diagrams
 
-- **VS Code:** Install “PlantUML” extension (e.g. jebbs.plantuml), then preview with `Alt+D` or export from command palette.
-- **CLI:** Install [PlantUML](https://plantuml.com/) (Java required), then e.g. `plantuml docs/2-design/c4/context.puml`.
-- **C4:** Include C4-PlantUML in your diagram (see `c4/context.puml` or [C4-PlantUML samples](https://github.com/plantuml-stdlib/C4-PlantUML)).
+- **GitHub:** pushing a changed `.puml` file triggers the [PlantUML workflow](../../.github/workflows/plantuml.yml), which updates PNGs alongside their sources.
+- **VS Code:** use a PlantUML extension to preview or export a diagram.
+- **CLI:** install [PlantUML](https://plantuml.com/) and run, for example, `plantuml docs/2-design/c4/context.puml` from the repository root.
 
-## Requirements
-
-Design is driven by [../1-requirements/user-stories.md](../1-requirements/user-stories.md). C4 describes structure; sequence diagrams describe main flows.
+The C4 sources use [C4-PlantUML](https://github.com/plantuml-stdlib/C4-PlantUML).
