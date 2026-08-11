@@ -6,9 +6,9 @@
 
 aws_region          = "<aws-region>"
 ecr_repository_url  = "<ecr-repository-url>" # ie. <aws-account-id>.dkr.ecr.<aws-region>.amazonaws.com/remind-ledger
-cognito_issuer_uri  = "<cognito-issuer-uri>" # ie. https://cognito-idp.<aws-region>.amazonaws.com/<aws-region>
+cognito_issuer_uri  = "<cognito-issuer-uri>" # ie. https://cognito-idp.<aws-region>.amazonaws.com/<user-pool-id>
 deployment_target   = "eks"
-spring_profile      = "prod"
+spring_profile      = "dev"
 container_image_tag = "latest"
 
 # Restrict public EKS API access to trusted administrator networks.
