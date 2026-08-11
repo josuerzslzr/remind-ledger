@@ -1,0 +1,23 @@
+# Copy this file to terraform.tfvars in this directory before running Terraform:
+# cp infra/backend/terraform.tfvars.example infra/backend/terraform.tfvars
+#
+# Replace the example values with outputs from the foundation stack and values
+# appropriate for your environment. The destination file is ignored by Git.
+
+aws_region          = "<aws-region>"
+ecr_repository_url  = "<ecr-repository-url>" # ie. <aws-account-id>.dkr.ecr.<aws-region>.amazonaws.com/remind-ledger
+cognito_issuer_uri  = "<cognito-issuer-uri>" # ie. https://cognito-idp.<aws-region>.amazonaws.com/<aws-region>
+deployment_target   = "eks"
+spring_profile      = "prod"
+container_image_tag = "latest"
+
+# Restrict public EKS API access to trusted administrator networks.
+eks_public_access_cidrs    = ["<trusted-administrator-cidr>"] # ie. 203.0.113.10/32
+eks_version                 = "1.35"
+eks_instance_types          = ["t3.medium"]
+eks_node_min_size           = 1
+eks_node_desired_size       = 1
+eks_node_max_size           = 2
+
+skip_final_snapshot = true
+enable_bastion      = false

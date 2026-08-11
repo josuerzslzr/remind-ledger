@@ -1,0 +1,9 @@
+# Copy this file to terraform.tfvars in this directory before running Terraform:
+# cp infra/foundation/terraform.tfvars.example infra/foundation/terraform.tfvars
+#
+# Replace the placeholder below. The destination file is ignored by Git.
+
+aws_region = "<aws-region>"
+
+# Optional; omit this line to use the default value "remind-ledger".
+project = "remind-ledger"

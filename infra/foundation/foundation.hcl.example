@@ -1,0 +1,12 @@
+# Copy this file to foundation.hcl in this directory before initializing the stack:
+# cp infra/foundation/foundation.hcl.example infra/foundation/foundation.hcl
+#
+# Replace the placeholders with outputs from the bootstrap stack:
+# terraform -chdir=infra/bootstrap output
+# The destination file is ignored by Git.
+
+bucket         = "<state-bucket-name>"
+key            = "foundation/terraform.tfstate"
+region         = "<aws-region>"
+dynamodb_table = "<terraform-lock-table-name>"
+encrypt        = true
