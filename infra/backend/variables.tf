@@ -126,10 +126,14 @@ variable "eks_node_max_size" {
 
 variable "eks_public_access_cidrs" {
   type        = list(string)
-  description = "CIDR blocks allowed to reach the public EKS API endpoint. Restrict this to trusted administrator networks."
+  description = "IPv4 CIDR blocks allowed to reach the public EKS API endpoint. Restrict these to trusted administrator networks."
 
   validation {
-    condition     = length(var.eks_public_access_cidrs) > 0 && alltrue([for cidr in var.eks_public_access_cidrs : can(cidrhost(cidr, 0))])
-    error_message = "eks_public_access_cidrs must contain valid IPv4 or IPv6 CIDR blocks."
+    condition = length(var.eks_public_access_cidrs) > 0 && alltrue([
+      for cidr in var.eks_public_access_cidrs :
+      can(cidrnetmask(cidr)) &&
+      try(cidrsubnet(cidr, 0, 0), "0.0.0.0/0") != "0.0.0.0/0"
+    ])
+    error_message = "eks_public_access_cidrs must contain valid IPv4 CIDR blocks and must not include 0.0.0.0/0."
   }
 }
