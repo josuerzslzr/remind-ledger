@@ -33,7 +33,10 @@ See the [design documentation](docs/2-design/README.md) for the diagram sources 
 | Data | PostgreSQL, Flyway |
 | Authentication | Amazon Cognito, OAuth 2.0/OIDC |
 | Infrastructure | Terraform, AWS, Docker, ECS Fargate or EKS |
-| Frontend and notifications | React/Vite and EventBridge/SQS *(planned)* |
+| Frontend | React, Vite, TypeScript *(planned)* |
+| Reminder scheduling | EventBridge Scheduler, SQS *(planned)* |
+| Notification delivery | Channels and providers to be defined *(planned)* |
+| Mobile | To be defined *(future)* |
 
 The rationale behind these choices is recorded in the [architectural decisions](docs/2-design/decisions/README.md).
 

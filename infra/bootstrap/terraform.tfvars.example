@@ -1,0 +1,8 @@
+# Copy this file to terraform.tfvars in this directory before running Terraform:
+# cp infra/bootstrap/terraform.tfvars.example infra/bootstrap/terraform.tfvars
+#
+# Replace the placeholders below. The destination file is ignored by Git.
+
+aws_region          = "<aws-region>"
+state_bucket_name   = "<globally-unique-state-bucket-name>"
+lock_table_name     = "<terraform-lock-table-name>"

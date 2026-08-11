@@ -20,7 +20,17 @@ Terraform configuration for the AWS resources that support RemindLedger. The inf
 | [`foundation/`](foundation/) | Remote | Creates resources shared across environments, including ECR and Cognito. |
 | [`backend/`](backend/) | Remote | Creates networking, RDS, CloudFront/ALB, and exactly one application runtime. |
 
-Apply the stacks in that order. The foundation and backend stacks use separate S3 state keys; create ignored `foundation.hcl` and `backend.hcl` backend configuration files from the bootstrap outputs. Supply stack inputs through ignored `terraform.tfvars` files or explicit `-var` arguments.
+Apply the stacks in that order. The foundation and backend stacks use separate S3 state keys. Copy the committed `.example` files to their ignored local filenames, then replace the placeholders with values for your environment:
+
+```bash
+cp infra/bootstrap/terraform.tfvars.example infra/bootstrap/terraform.tfvars
+cp infra/foundation/foundation.hcl.example infra/foundation/foundation.hcl
+cp infra/foundation/terraform.tfvars.example infra/foundation/terraform.tfvars
+cp infra/backend/backend.hcl.example infra/backend/backend.hcl
+cp infra/backend/terraform.tfvars.example infra/backend/terraform.tfvars
+```
+
+Populate `foundation.hcl` and `backend.hcl` from the bootstrap outputs. Populate the backend stack inputs that reference shared resources from the foundation outputs. The comments in each example file identify how to use it. Keep the generated local files uncommitted; use explicit `-var` arguments instead of `terraform.tfvars` when preferred.
 
 A typical command sequence for each stack is:
 
